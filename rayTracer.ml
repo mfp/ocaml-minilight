@@ -52,7 +52,7 @@ object (__)
       (* check an emitter was found *)
       match scene_m#emitter random with
 
-      | (Triangle.Obj emitter, emitterPosition) ->
+      | (Some emitter, emitterPosition) ->
 
          (* make direction to emit point *)
          let emitDirection = vUnitize
@@ -60,21 +60,19 @@ object (__)
 
          (* send shadow ray *)
          let hitObject, _ = scene_m#intersection surfacePoint#position
-            emitDirection (Triangle.Obj surfacePoint#hitObject) in
+            emitDirection (Some surfacePoint#hitObject) in
 
          (* if unshadowed, get inward emission value *)
-         let emissionIn = if (Triangle.Null = hitObject) ||
-            ((Triangle.Obj emitter) = hitObject) then
-                (new SurfacePoint.obj emitter emitterPosition)#emission
-                  surfacePoint#position ~-|emitDirection true
-            else
-               vZero in
+         let emissionIn = match hitObject with
+             Some emitter' when emitter' <> emitter -> vZero
+           | _ -> (new SurfacePoint.obj emitter emitterPosition)#emission
+                    surfacePoint#position ~-|emitDirection true in
 
          (* get amount reflected by surface *)
          surfacePoint#reflection emitDirection
             (emissionIn *|. (float scene_m#emittersCount)) ~-|rayDirection
 
-      | (Triangle.Null, _) ->
+      | (None, _) ->
 
          vZero
 
@@ -89,18 +87,18 @@ object (__)
     * @param random       (Random.State.t) random number generator
     * @return (Vector3f.vT) light value in radiance
     *)
-   method radiance rayOrigin rayDirection ?(lastHit = Triangle.Null) random =
+   method radiance rayOrigin rayDirection ?lastHit random =
 
       (* intersect ray with scene *)
       match scene_m#intersection rayOrigin rayDirection lastHit with
 
-      | (Triangle.Obj triangle, hitPosition) ->
+      | (Some triangle, hitPosition) ->
 
          (* make SurfacePoint of intersection *)
          let surfacePoint = new SurfacePoint.obj triangle hitPosition in
 
          (* local emission only for first-hit *)
-         let localEmission = if lastHit = Triangle.Null then
+         let localEmission = if lastHit = None then
             surfacePoint#emission rayOrigin ~-|rayDirection false else vZero
 
          (* emitter sample *)
@@ -118,14 +116,14 @@ object (__)
             if nextDirection <> vZero then
                (* recurse *)
                color *| (__#radiance surfacePoint#position nextDirection
-                  ~lastHit:(Triangle.Obj surfacePoint#hitObject) random)
+                  ~lastHit:surfacePoint#hitObject random)
             else
                vZero in
 
          (* total radiance returned *)
          reflection +| illumination +| localEmission
 
-      | (Triangle.Null, _) ->
+      | (None, _) ->
 
          (* no hit: default/background scene emission *)
          scene_m#defaultEmission ~-|rayDirection

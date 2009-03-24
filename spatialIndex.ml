@@ -181,7 +181,7 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
             ~start:(cellPosition) lastHit with
 
          (* no hit, so continue walking across subcells *)
-         | (Triangle.Null, _) ->
+         | (None, _) ->
 
             (* find next subcell ray moves to
                (by finding which face of the corner ahead is crossed first) *)
@@ -202,15 +202,14 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
                or direction is positive and subcell is high *)
             if ((if (rayDirection.(axis) < 0.0) then 1 else 0) lxor
                ((subCell lsr axis) land 1)) = 1 then
-               (Triangle.Null, vZero)
+               (None, vZero)
             else
                (* move to (outer face of) next subcell *)
                walk (subCell lxor (1 lsl axis)) (rayOrigin +| (rayDirection *|.
                   step))
 
          (* hit, so exit *)
-         | (Triangle.Obj _, _) as hit ->
-            hit in
+         | (Some _, _) as hit -> hit in
 
       (* step through intersected subcells *)
       walk subCell start
@@ -219,34 +218,32 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
    | Node { bound= bound; subparts= Items items } ->
 
       (* define nearest-finder *)
-      let findNearest nearest item =
-
+      let findNearest nearest item = match lastHit with
          (* avoid false intersection with surface just come from *)
-         if (Triangle.Obj item) <> lastHit then
+          Some it when it = item -> nearest
+        | _ ->
             let _, _, nearestDistance = nearest in
 
             (* intersect item and inspect if nearest so far *)
-            let isHit, distance = item#intersection rayOrigin rayDirection in
-            if isHit && (distance < nearestDistance) then
-               let hit = rayOrigin +| (rayDirection *|. distance) in
+            match item#intersection rayOrigin rayDirection with
+                true, distance when distance < nearestDistance ->
+                  let hit = rayOrigin +| (rayDirection *|. distance) in
 
-               (* check intersection is inside cell bound (with tolerance) *)
-               let t = Triangle.tolerance_k in
-               if (bound.(0) -. hit.(0) > t) || (hit.(0) -. bound.(3) > t) ||
-                  (bound.(1) -. hit.(1) > t) || (hit.(1) -. bound.(4) > t) ||
-                  (bound.(2) -. hit.(2) > t) || (hit.(2) -. bound.(5) > t) then
-                  nearest else (Triangle.Obj item, hit, distance)
-            else
-               nearest
-         else
-            nearest in
+                  (* check intersection is inside cell bound (with tolerance) *)
+                  let t = Triangle.tolerance_k in
+                    if (bound.(0) -. hit.(0) > t) || (hit.(0) -. bound.(3) > t) ||
+                       (bound.(1) -. hit.(1) > t) || (hit.(1) -. bound.(4) > t) ||
+                       (bound.(2) -. hit.(2) > t) || (hit.(2) -. bound.(5) > t)
+                    then nearest
+                    else (Some item, hit, distance)
+              | _ -> nearest in
 
       (* apply nearest-finder to items list *)
       let hitObject, hitPosition, _ = Array.fold_left findNearest
-         (Triangle.Null, vZero, infinity) items in
+         (None, vZero, infinity) items in
 
       (hitObject, hitPosition)
 
    (* is empty: no intersection *)
    | Empty ->
-      (Triangle.Null, vZero)
+      (None, vZero)

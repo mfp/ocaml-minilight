@@ -157,8 +157,3 @@ object (__)
    method emitivity    = emitivity_m
 
 end
-
-
-
-
-type var = Obj of obj | Null

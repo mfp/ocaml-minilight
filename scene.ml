@@ -97,9 +97,9 @@ object (__)
          let emitter = emitters_m.(Random.State.int random __#emittersCount) in
 
          (* get position on triangle *)
-         (Triangle.Obj emitter, emitter#samplePoint random)
+         (Some emitter, emitter#samplePoint random)
       else
-         (Triangle.Null, vZero)
+         (None, vZero)
 
 
    (**

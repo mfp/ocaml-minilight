@@ -86,7 +86,7 @@ object (__)
     *
     * @param rayOrigin    (Vector3f.vT) ray origin
     * @param rayDirection (Vector3f.vT) ray direction unitized
-    * @return (bool, float) did ray intersect, and distance along ray
+    * @return float option  Some distance along ray if intersected
     *)
    method intersection rayOrigin rayDirection =
 
@@ -98,7 +98,7 @@ object (__)
       let epsilon = 0.000001 in
       if (det > -.epsilon) && (det < epsilon) then
 
-         (false, infinity)
+         None
       else
          let inv_det = 1.0 /. det in
 
@@ -109,7 +109,7 @@ object (__)
          let u = (vDot tvec pvec) *. inv_det in
          if (u < 0.0) || (u > 1.0) then
 
-            (false, infinity)
+            None
          else
             (* prepare to test V parameter *)
             let qvec = vCross tvec edge0 in
@@ -118,13 +118,13 @@ object (__)
             let v = (vDot rayDirection qvec) *. inv_det in
             if (v < 0.0) || (u +. v > 1.0) then
 
-               (false, infinity)
+               None
             else
                (* calculate t, ray intersects triangle *)
                let hitDistance = (vDot edge3 qvec) *. inv_det in
 
                (* only allow intersections in the forward ray direction *)
-               (hitDistance >= 0.0, hitDistance)
+               if hitDistance >= 0. then Some hitDistance else None
 
 
    (**

@@ -226,7 +226,7 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
 
             (* intersect item and inspect if nearest so far *)
             match item#intersection rayOrigin rayDirection with
-                true, distance when distance < nearestDistance ->
+                Some distance when distance < nearestDistance ->
                   let hit = rayOrigin +| (rayDirection *|. distance) in
 
                   (* check intersection is inside cell bound (with tolerance) *)

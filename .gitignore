@@ -1,0 +1,10 @@
+*.swp
+*.omc
+*.cmx
+*.cmo
+*.cmi
+*.o
+*.annot
+/minilight
+/minilight.opt
+/.omakedb*

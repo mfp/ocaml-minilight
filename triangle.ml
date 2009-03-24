@@ -44,22 +44,24 @@ class obj inBuffer_i =
       three vertexs, then reflectivity, then emitivity *)
    let vectors_c = let rec readVectors vs i = if i = 0 then vs else
       readVectors ((vRead inBuffer_i) :: vs) (i - 1) in readVectors [] 5 in
-
+   let vertexs_m = [| List.nth vectors_c 4; List.nth vectors_c 3;
+      List.nth vectors_c 2 |] in
+   let edge0 = vertexs_m.(1) -| vertexs_m.(0) in
+   let edge1 = vertexs_m.(2) -| vertexs_m.(1) in
+   let edge3 = vertexs_m.(2) -| vertexs_m.(0) in
+   let normal = lazy (vUnitize (vCross edge0 edge1)) in
+   let tangent = lazy (vUnitize edge0) in
+   let area = lazy (0.5 *. vLength (vCross edge0 edge1)) in
 
 object (__)
 
 (* fields ------------------------------------------------------------------- *)
-   val vertexs_m = [| List.nth vectors_c 4; List.nth vectors_c 3;
-      List.nth vectors_c 2 |]
 
    val reflectivity_m = vClamp vZero vOne     (List.nth vectors_c 1)
    val emitivity_m    = vClamp vZero vMaximum (List.nth vectors_c 0)
 
 
 (* implementation ----------------------------------------------------------- *)
-   method private edge0 = vertexs_m.(1) -| vertexs_m.(0)
-   method private edge1 = vertexs_m.(2) -| vertexs_m.(1)
-   method private edge3 = vertexs_m.(2) -| vertexs_m.(0)
 
 
 (* queries ------------------------------------------------------------------ *)
@@ -89,8 +91,8 @@ object (__)
    method intersection rayOrigin rayDirection =
 
       (* begin calculating determinant -- also used to calculate U parameter *)
-      let pvec = vCross rayDirection __#edge3 in
-      let det  = vDot __#edge0 pvec in
+      let pvec = vCross rayDirection edge3 in
+      let det  = vDot edge0 pvec in
 
       (* if determinant is near zero, ray lies in plane of triangle *)
       let epsilon = 0.000001 in
@@ -110,7 +112,7 @@ object (__)
             (false, infinity)
          else
             (* prepare to test V parameter *)
-            let qvec = vCross tvec __#edge0 in
+            let qvec = vCross tvec edge0 in
 
             (* calculate V parameter and test bounds *)
             let v = (vDot rayDirection qvec) *. inv_det in
@@ -119,7 +121,7 @@ object (__)
                (false, infinity)
             else
                (* calculate t, ray intersects triangle *)
-               let hitDistance = (vDot __#edge3 qvec) *. inv_det in
+               let hitDistance = (vDot edge3 qvec) *. inv_det in
 
                (* only allow intersections in the forward ray direction *)
                (hitDistance >= 0.0, hitDistance)
@@ -139,15 +141,15 @@ object (__)
          vCreate 1.0 (1.0 -. sqr1) ((1.0 -. r2) *. sqr1) in
 
       (* make position by scaling edges by barycentrics *)
-      vScaleFrame [| vertexs_m.(0); __#edge0; __#edge3 |] barycentrics
+      vScaleFrame [| vertexs_m.(0); edge0; edge3 |] barycentrics
 
 
-   method normal  = vUnitize (vCross __#edge0 __#edge1)
+   method normal  = Lazy.force normal
 
-   method tangent = vUnitize __#edge0
+   method tangent = Lazy.force tangent
 
    (* half area of parallelogram *)
-   method area    = 0.5 *. vLength (vCross __#edge0 __#edge1)
+   method area    = Lazy.force area
 
 
    method reflectivity = reflectivity_m

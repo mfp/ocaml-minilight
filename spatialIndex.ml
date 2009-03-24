@@ -181,7 +181,7 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
             ~start:(cellPosition) lastHit with
 
          (* no hit, so continue walking across subcells *)
-         | (None, _) ->
+         | None ->
 
             (* find next subcell ray moves to
                (by finding which face of the corner ahead is crossed first) *)
@@ -202,14 +202,14 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
                or direction is positive and subcell is high *)
             if ((if (rayDirection.(axis) < 0.0) then 1 else 0) lxor
                ((subCell lsr axis) land 1)) = 1 then
-               (None, vZero)
+               None
             else
                (* move to (outer face of) next subcell *)
                walk (subCell lxor (1 lsl axis)) (rayOrigin +| (rayDirection *|.
                   step))
 
          (* hit, so exit *)
-         | (Some _, _) as hit -> hit in
+         | Some _ as hit -> hit in
 
       (* step through intersected subcells *)
       walk subCell start
@@ -236,14 +236,12 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
                        (bound.(2) -. hit.(2) > t) || (hit.(2) -. bound.(5) > t)
                     then nearest
                     else (Some item, hit, distance)
-              | _ -> nearest in
+              | _ -> nearest
 
       (* apply nearest-finder to items list *)
-      let hitObject, hitPosition, _ = Array.fold_left findNearest
-         (None, vZero, infinity) items in
-
-      (hitObject, hitPosition)
+      in (match Array.fold_left findNearest (None, vZero, infinity) items with
+              Some hitObject, hitPosition, _ -> Some (hitObject, hitPosition)
+            | None, _, _ -> None)
 
    (* is empty: no intersection *)
-   | Empty ->
-      (None, vZero)
+   | Empty -> None

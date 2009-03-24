@@ -58,13 +58,10 @@ object (__)
          let emitDirection = vUnitize
             (emitterPosition -| surfacePoint#position) in
 
-         (* send shadow ray *)
-         let hitObject, _ = scene_m#intersection surfacePoint#position
-            emitDirection (Some surfacePoint#hitObject) in
-
-         (* if unshadowed, get inward emission value *)
-         let emissionIn = match hitObject with
-             Some emitter' when emitter' <> emitter -> vZero
+         (* send shadow ray; if unshadowed, get inward emission value *)
+         let emissionIn = match scene_m#intersection surfacePoint#position
+                                  emitDirection (Some surfacePoint#hitObject) with
+             Some (hitObject, _) when hitObject <> emitter -> vZero
            | _ -> (new SurfacePoint.obj emitter emitterPosition)#emission
                     surfacePoint#position ~-|emitDirection true in
 
@@ -92,7 +89,7 @@ object (__)
       (* intersect ray with scene *)
       match scene_m#intersection rayOrigin rayDirection lastHit with
 
-      | (Some triangle, hitPosition) ->
+      | Some (triangle, hitPosition) ->
 
          (* make SurfacePoint of intersection *)
          let surfacePoint = new SurfacePoint.obj triangle hitPosition in
@@ -123,7 +120,7 @@ object (__)
          (* total radiance returned *)
          reflection +| illumination +| localEmission
 
-      | (None, _) ->
+      | None ->
 
          (* no hit: default/background scene emission *)
          scene_m#defaultEmission ~-|rayDirection

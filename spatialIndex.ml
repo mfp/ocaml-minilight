@@ -220,7 +220,7 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
       (* define nearest-finder *)
       let findNearest nearest item = match lastHit with
          (* avoid false intersection with surface just come from *)
-          Some it when it = item -> nearest
+          Some it when it == item -> nearest
         | _ ->
             let _, _, nearestDistance = nearest in
 

@@ -61,7 +61,7 @@ object (__)
          (* send shadow ray; if unshadowed, get inward emission value *)
          let emissionIn = match scene_m#intersection surfacePoint#position
                                   emitDirection (Some surfacePoint#hitObject) with
-             Some (hitObject, _) when hitObject <> emitter -> vZero
+             Some (hitObject, _) when hitObject != emitter -> vZero
            | _ -> (new SurfacePoint.obj emitter emitterPosition)#emission
                     surfacePoint#position ~-|emitDirection true in
 

@@ -44,7 +44,7 @@ class obj inBuffer_i eyePosition_i =
    let triangles_c = let rec readTriangle ts i =
          try
             if i = 0 then
-               ts else readTriangle ((new Triangle.obj inBuffer_i) :: ts) (i-1)
+               ts else readTriangle (Triangle.make inBuffer_i :: ts) (i-1)
          (* EOF is not really exceptional here, but the code is simpler *)
          with
             | End_of_file -> ts in
@@ -54,7 +54,7 @@ class obj inBuffer_i eyePosition_i =
    (* find emitting triangles *)
    let emitters_c =
       (* has non-zero emission and area *)
-      let isEmitter t = (t#emitivity <> vZero) && (t#area > 0.0) in
+      let isEmitter t = (Triangle.emitivity t <> vZero) && (Triangle.area t > 0.0) in
       List.filter isEmitter triangles_c in
 
 
@@ -97,7 +97,7 @@ object (__)
          let emitter = emitters_m.(Random.State.int random __#emittersCount) in
 
          (* get position on triangle *)
-         (Some emitter, emitter#samplePoint random)
+         (Some emitter, Triangle.samplePoint emitter random)
       else
          (None, vZero)
 

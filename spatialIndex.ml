@@ -34,7 +34,7 @@ open Vector3f
  *
  * Calculations for building and tracing are absolute rather than incremental --
  * so quite numerically solid. Uses tolerances in: bounding triangles (in
- * Triangle.obj#bound), and checking intersection is inside cell (both effective
+ * Triangle.bound triangle), and checking intersection is inside cell (both effective
  * for axis-aligned items). Also, depth is constrained to an absolute subcell
  * size (easy way to handle overlapping items).
  *
@@ -46,7 +46,7 @@ open Vector3f
 
 
 (* types -------------------------------------------------------------------- *)
-type nArray = SubCells of t array | Items of Triangle.obj array
+type nArray = SubCells of t array | Items of Triangle.t array
 and  node   = { bound: float array;  subparts: nArray }
 and  t      = Node of node | Empty
 
@@ -87,7 +87,7 @@ let rec construct bound items level =
 
          (* collect items that overlap subcell *)
          let subItems =
-            let isOverlap item = let itemBound = item#bound in
+            let isOverlap item = let itemBound = Triangle.bound item in
                (* must overlap in all dimensions *)
                let all = ref 1 in
                for j = 0 to 5 do
@@ -132,7 +132,7 @@ let create eyePosition items =
    let bound =
       (* accommodate all items, and eye position (makes tracing algorithm
          simpler) *)
-      let rectBound = let encompass rb item = let ib = item#bound in
+      let rectBound = let encompass rb item = let ib = Triangle.bound item in
             [| vZip min rb.(0) ib.(0);  vZip max rb.(1) ib.(1) |] in
          List.fold_left encompass [| eyePosition; eyePosition |] items in
 
@@ -225,7 +225,7 @@ let rec intersection octree rayOrigin rayDirection ?(start = rayOrigin)
             let _, _, nearestDistance = nearest in
 
             (* intersect item and inspect if nearest so far *)
-            match item#intersection rayOrigin rayDirection with
+            match Triangle.intersection item rayOrigin rayDirection with
                 Some distance when distance < nearestDistance ->
                   let hit = rayOrigin +| (rayDirection *|. distance) in
 

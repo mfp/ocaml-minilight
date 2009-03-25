@@ -20,7 +20,7 @@ open Vector3f
  *
  * All direction parameters are away from surface.
  *
- * @param triangle_i (Triangle.obj) surface's object
+ * @param triangle_i (Triangle.t)   surface's object
  * @param position_i (Vector3f.vT)  position of point on surface
  *)
 class obj triangle_i position_i =
@@ -32,7 +32,7 @@ class obj triangle_i position_i =
 object (__)
 
 (* fields ------------------------------------------------------------------- *)
-   val triangle_m = (triangle_i:Triangle.obj)
+   val triangle_m = (triangle_i:Triangle.t)
 
    val position_m = position_i
 
@@ -49,14 +49,14 @@ object (__)
    method emission toPosition outDirection isSolidAngle =
 
       let distance2 = let ray = toPosition -| position_m in vDot ray ray
-      and cosArea  = (vDot outDirection triangle_m#normal) *. triangle_m#area in
+      and cosArea  = vDot outDirection (Triangle.normal triangle_m) *. Triangle.area triangle_m in
 
       (* clamp-out infinity *)
       let solidAngle = if isSolidAngle then
          cosArea /. (max 1e-6 distance2) else 1.0 in
 
       (* emit from front face of surface only *)
-      if cosArea > 0.0 then triangle_m#emitivity *|. solidAngle else vZero
+      if cosArea > 0.0 then Triangle.emitivity triangle_m *|. solidAngle else vZero
 
 
    (**
@@ -69,14 +69,14 @@ object (__)
     *)
    method reflection inDirection inRadiance outDirection =
 
-      let inDot  = vDot inDirection  triangle_m#normal
-      and outDot = vDot outDirection triangle_m#normal in
+      let inDot  = vDot inDirection  (Triangle.normal triangle_m)
+      and outDot = vDot outDirection (Triangle.normal triangle_m) in
 
       (* directions must be on same side of surface *)
       if ((compare 0.0 inDot) * (compare 0.0 outDot)) > 0 then
          (* ideal diffuse BRDF:
             radiance scaled by cosine, 1/pi, and reflectivity *)
-         (inRadiance *| triangle_m#reflectivity) *|. (abs_float inDot /. pi_k)
+         (inRadiance *| Triangle.reflectivity triangle_m) *|. (abs_float inDot /. pi_k)
       else
          vZero
 
@@ -91,11 +91,11 @@ object (__)
     *)
    method nextDirection inDirection random =
 
-      let reflectivityMean = (vDot triangle_m#reflectivity vOne) /. 3.0 in
+      let reflectivityMean = (vDot (Triangle.reflectivity triangle_m) vOne) /. 3.0 in
 
       (* russian-roulette for reflectance magnitude *)
       if (Random.State.float random 1.0) < reflectivityMean then
-         let color = triangle_m#reflectivity /|. reflectivityMean in
+         let color = Triangle.reflectivity triangle_m /|. reflectivityMean in
 
          (* cosine-weighted importance sample hemisphere *)
 
@@ -106,8 +106,8 @@ object (__)
             (sqrt (1.0 -. (sr2 *. sr2)))
 
          (* make coord frame *)
-         and frame = let tangent = triangle_m#tangent
-            and normal = let n = triangle_m#normal in
+         and frame = let tangent = Triangle.tangent triangle_m
+            and normal = let n = Triangle.normal triangle_m in
                (* enable reflection from either face of surface *)
                if (vDot n inDirection) >= 0.0 then n else ~-|n in
             [| tangent; vCross normal tangent; normal |] in

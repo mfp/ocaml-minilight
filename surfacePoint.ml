@@ -85,7 +85,7 @@ object (__)
     * Monte-carlo direction of reflection from surface.
     *
     * @param inDirection (Vector3f.vT)    eyeward ray direction
-    * @param random      (Random.State.t) random number generator
+    * @param random      (FRandom.t)      random number generator
     * @return (Vector3f.vT, Vector3f.vT) sceneward ray direction unitized, and
     * light scaling of interaction point
     *)
@@ -94,13 +94,13 @@ object (__)
       let reflectivityMean = (vDot (Triangle.reflectivity triangle_m) vOne) /. 3.0 in
 
       (* russian-roulette for reflectance magnitude *)
-      if (Random.State.float random 1.0) < reflectivityMean then
+      if (FRandom.float random) < reflectivityMean then
          let color = Triangle.reflectivity triangle_m /|. reflectivityMean in
 
          (* cosine-weighted importance sample hemisphere *)
 
          (* make coord frame coefficients (z in normal direction) *)
-         let coefficients = let rand () = Random.State.float random 1.0 in
+         let coefficients = let rand () = FRandom.float random in
             let p2r1, sr2 = (pi_k *. 2.0 *. (rand ())), (sqrt (rand ())) in
             vCreate ((cos p2r1) *. sr2) ((sin p2r1) *. sr2)
             (sqrt (1.0 -. (sr2 *. sr2)))

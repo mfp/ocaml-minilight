@@ -39,7 +39,7 @@ object (__)
     *
     * @param rayDirection (Vector3f.vT)      previous ray direction unitized
     * @param surfacePoint (SurfacePoint.obj) surface point receiving emission
-    * @param random       (Random.State.t)   random number generator
+    * @param random       (FRandom.t)        random number generator
     * @return (Vector3f.vT) light value in radiance
     *)
    method private emitterSample rayDirection surfacePoint random =
@@ -81,7 +81,7 @@ object (__)
     * @param rayOrigin    (Vector3f.vT)    ray start point
     * @param rayDirection (Vector3f.vT)    ray direction unitized
     * @param lastHit      (Triangle.var)   previous intersected object
-    * @param random       (Random.State.t) random number generator
+    * @param random       (FRandom.t)      random number generator
     * @return (Vector3f.vT) light value in radiance
     *)
    method radiance rayOrigin rayDirection ?lastHit random =

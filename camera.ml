@@ -72,7 +72,7 @@ object (__)
     *
     * @param scene  (Scene.obj)      scene to render
     * @param image  (Image.obj)      image to add to
-    * @param random (Random.State.t) random number generator
+    * @param random (FRandom.t)      random number generator
     * @return (Image.obj) modified image
     *)
    method frame (scene:Scene.obj) (image:Image.obj) random =
@@ -89,7 +89,7 @@ object (__)
             let sampleDirection =
 
                (* make image plane displacement vector coefficients *)
-               let xF, yF = let rand () = Random.State.float random 1.0 in
+               let xF, yF = let rand () = FRandom.float random in
                   ( (((float x) +. (rand ())) *. 2.0 /. width ) -. 1.0,
                     (((float y) +. (rand ())) *. 2.0 /. height) -. 1.0 ) in
 

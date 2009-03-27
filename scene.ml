@@ -86,18 +86,18 @@ object (__)
    (**
     * Monte-carlo sample point on monte-carlo selected emitting object.
     *
-    * @param random (Random.State.t) random number generator
+    * @param rand (FRandom.t) random number generator
     * @return (Triangle.var, Vector3f.vT) object|null, and point on the
     * object
     *)
-   method emitter random =
+   method emitter rand = let c = __#emittersCount in
 
-      if __#emittersCount > 0 then
+      if c > 0 then
          (* select emitter *)
-         let emitter = emitters_m.(Random.State.int random __#emittersCount) in
+         let emitter = emitters_m.((FRandom.int rand land 65535 * c) lsr 16) in
 
          (* get position on triangle *)
-         (Some emitter, Triangle.samplePoint emitter random)
+         (Some emitter, Triangle.samplePoint emitter rand)
       else
          (None, vZero)
 

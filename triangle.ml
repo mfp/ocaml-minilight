@@ -130,18 +130,18 @@ let intersection t rayOrigin rayDirection =
 (**
 * Monte-carlo sample point on triangle.
 *
-* @param random (Random.State.t) random number generator
+* @param random (FRandom.t) random number generator
 * @return (Vector3f.vT) point on the triangle
 *)
 let samplePoint t random =
 
   (* make barycentric coords *)
-  let barycentrics = let rand () = Random.State.float random 1.0 in
-  let sqr1, r2 = (sqrt (rand ()), rand ()) in
-    vCreate 1.0 (1.0 -. sqr1) ((1.0 -. r2) *. sqr1) in
+  let barycentrics =
+     let sqr1, r2 = (sqrt (FRandom.float random), FRandom.float random) in
+     vCreate 1.0 (1.0 -. sqr1) ((1.0 -. r2) *. sqr1)
 
     (* make position by scaling edges by barycentrics *)
-    vScaleFrame [| t.vertexs_m.(0); t.edge0; t.edge3 |] barycentrics
+  in vScaleFrame [| t.vertexs_m.(0); t.edge0; t.edge3 |] barycentrics
 
 let normal  t = !! (t.normal)
 

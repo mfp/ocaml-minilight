@@ -124,8 +124,7 @@ try
       let scene  = new Scene.obj  modelFile camera#eyePoint in
 
       (* make deterministic *)
-      let random = Random.State.make [|1|] in
-      (*let random = Random.State.make_self_init in*)
+      let random = FRandom.make ~seed:1 () in
 
       (* (must now be imperative so relevant data can be caught with ctrl-c) *)
       let lastTime = ref ~-.181.0

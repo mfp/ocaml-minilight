@@ -33,10 +33,8 @@ let tolerance_k = 1.0 /. 1024.0 ;;
  *)
 type t = {
   vertexs_m : vT array;
+  vectors_c : vT array;
   edge0 : vT; edge1 : vT; edge3 : vT;
-  normal : vT lazy_t; tangent : vT lazy_t; area : float lazy_t;
-  reflectivity_m : vT lazy_t; emitivity_m : vT lazy_t;
-  bound : vT array lazy_t;
 }
 
 (*
@@ -51,27 +49,13 @@ let make inBuffer_i =
    (* read vectors in sequence:
       three vertexs, then reflectivity, then emitivity *)
    let vectors_c = let rec readVectors vs i = if i = 0 then vs else
-      readVectors ((vRead inBuffer_i) :: vs) (i - 1) in readVectors [] 5 in
-   let vertexs_m = Array.map (List.nth vectors_c) [| 4; 3; 2 |] in
-   let bound =
-     let expand clamp nudge =
-       vZip
-         (* include tolerance *)
-         (fun a b -> nudge b (((abs_float b) +. a) *. tolerance_k)) vOne
-         (* fold to min or max *)
-         (vZip clamp vertexs_m.(0) (vZip clamp vertexs_m.(1) vertexs_m.(2)))
-     in [| expand min (-.);  expand max (+.) |] in
+      readVectors ((vRead inBuffer_i) :: vs) (i - 1) in Array.of_list (readVectors [] 5) in
+   let vertexs_m = Array.map (Array.get vectors_c) [| 4; 3; 2 |] in
    let edge0 = vertexs_m.(1) -| vertexs_m.(0)
    and edge1 = vertexs_m.(2) -| vertexs_m.(1)
    and  edge3 = vertexs_m.(2) -| vertexs_m.(0) in
      { edge0 = edge0; edge1 = edge1; edge3 = edge3; vertexs_m = vertexs_m;
-       normal = lazy (vUnitize (vCross edge0 edge1));
-       tangent = lazy (vUnitize edge0);
-       area = lazy (0.5 *. vLength (vCross edge0 edge1));
-       reflectivity_m = lazy (vClamp vZero vOne     (List.nth vectors_c 1));
-       emitivity_m    = lazy (vClamp vZero vMaximum (List.nth vectors_c 0));
-       bound = lazy bound;
-     }
+       vectors_c = vectors_c; }
 
 (* queries ------------------------------------------------------------------ *)
    (**
@@ -79,7 +63,14 @@ let make inBuffer_i =
     *
     * @return (2 Vector3f array) lower corner and upper corner
     *)
-let bound t = !! (t.bound)
+let bound t =
+     let expand clamp nudge =
+       vZip
+         (* include tolerance *)
+         (fun a b -> nudge b (((abs_float b) +. a) *. tolerance_k)) vOne
+         (* fold to min or max *)
+         (vZip clamp t.vertexs_m.(0) (vZip clamp t.vertexs_m.(1) t.vertexs_m.(2)))
+     in [| expand min (-.);  expand max (+.) |]
 
    (**
     * Intersection point of ray with triangle.
@@ -143,13 +134,13 @@ let samplePoint t random =
     (* make position by scaling edges by barycentrics *)
   in vScaleFrame [| t.vertexs_m.(0); t.edge0; t.edge3 |] barycentrics
 
-let normal  t = !! (t.normal)
+let normal  t = vUnitize (vCross t.edge0 t.edge1)
 
-let tangent t = !! (t.tangent)
+let tangent t = vUnitize t.edge0
 
 (* half area of parallelogram *)
-let area    t = !! (t.area)
+let area    t = (0.5 *. vLength (vCross t.edge0 t.edge1))
 
-let reflectivity t = !! (t.reflectivity_m)
+let reflectivity t = vClamp vZero vOne     t.vectors_c.(1)
 
-let emitivity    t = !! (t.emitivity_m)
+let emitivity    t = vClamp vZero vMaximum t.vectors_c.(0)

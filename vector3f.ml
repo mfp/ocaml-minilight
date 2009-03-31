@@ -89,8 +89,11 @@ let vCross   v0 v1 =
       (v0.(2) *. v1.(0)) -. (v0.(0) *. v1.(2));
       (v0.(0) *. v1.(1)) -. (v0.(1) *. v1.(0)) |]
 
+let minf (x : float) y = if x < y then x else y
+let maxf (x : float) y = if x > y then x else y
+
 (* clamp *)
-let vClamp   lower upper v = vZip min upper (vZip max lower v)
+let vClamp   lower upper (v : vT) = vZip minf upper (vZip maxf lower v)
 (*let vClamp01 v             = vClamp vZero vAlmostOne v*)
 
 (* vector-logical sign *)
